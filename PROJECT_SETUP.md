@@ -165,6 +165,8 @@ networks:
     driver: bridge
 ```
 
+---
+
 ### 4.2 Laravel Backend `Dockerfile` (`backend/Dockerfile`)
 
 ```dockerfile
@@ -280,6 +282,12 @@ php artisan attendance:generate-report 2024-01 --class=1
 php artisan attendance:generate-report 2024-01 --save-file
 ```
 
+* **Generate Custom Artisan Command**:
+
+```bash
+php artisan make:command GenerateAttendanceReport
+```
+
 ---
 
 ## 7. API Testing (curl)
@@ -298,4 +306,7 @@ curl -X POST http://localhost:8000/api/attendance/bulk
 * **Persistent Data:** Docker volume `db_data` preserves database.
 * **Frontend Dev:** Hot reload works through port `3000`.
 * **Backend Dev:** Laravel server runs on port `8000`.
+
+---
+
 
