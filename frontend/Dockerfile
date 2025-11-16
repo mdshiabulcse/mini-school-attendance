@@ -1,22 +1,15 @@
-# Dockerfile
+FROM node:22
 
-# Use Node.js version 22 Alpine (lightweight)
-FROM node:22-alpine
+WORKDIR /var/www/html
 
-# Set the working directory
-WORKDIR /app
-
-# Copy only package files first (for caching docker builds)
-COPY package*.json ./
+# Copy frontend files
+COPY . /var/www/html
 
 # Install dependencies
 RUN npm install
 
-# Now copy the entire project
-COPY . .
-
-# Expose the dev server port
+# Expose frontend port
 EXPOSE 3000
 
-# Start the Vite dev server
+# Run frontend dev server
 CMD ["npm", "run", "dev"]

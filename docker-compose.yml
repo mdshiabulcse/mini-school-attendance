@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  # Laravel Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: laravel_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: mini_school
+      DB_USERNAME: root
+      DB_PASSWORD: root123
+    depends_on:
+      - db
+    networks:
+      - mini_school_net
+
+  # Vue Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vue_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/var/www/html
+    networks:
+      - mini_school_net
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: mini_school
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - mini_school_net
+
+volumes:
+  db_data:
+
+networks:
+  mini_school_net:
+    driver: bridge
