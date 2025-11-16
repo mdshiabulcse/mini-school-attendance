@@ -1,4 +1,4 @@
-<!-- src/components/Layout/AppBar.vue -->
+
 <template>
   <v-app-bar color="primary" elevation="2">
     <!-- Left Section -->

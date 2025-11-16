@@ -1,4 +1,3 @@
-// src/services/studentService.js
 import api from './api'
 
 export const studentService = {

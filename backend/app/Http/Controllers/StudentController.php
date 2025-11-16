@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/StudentController.php
 
 namespace App\Http\Controllers;
 
@@ -80,7 +79,18 @@ class StudentController extends Controller
 
     public function update(Request $request, Student $student): JsonResponse
     {
+
+        Log::info('Student updated: ' . json_encode($request, JSON_PRETTY_PRINT));
+
         try {
+            // Handle FormData - convert string booleans to actual booleans
+            $requestData = $request->all();
+
+            // Convert 'true'/'false' strings to boolean for is_active
+            if (isset($requestData['is_active'])) {
+                $requestData['is_active'] = filter_var($requestData['is_active'], FILTER_VALIDATE_BOOLEAN);
+            }
+
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
                 'email' => 'sometimes|nullable|email|unique:students,email,' . $student->id,
@@ -93,7 +103,7 @@ class StudentController extends Controller
                 'parent_email' => 'sometimes|nullable|email',
                 'parent_phone' => 'sometimes|required|string|max:20',
                 'address' => 'sometimes|nullable|string',
-                'photo' => 'sometimes|nullable|image|max:2048',
+                'photo' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'is_active' => 'sometimes|boolean'
             ]);
 
@@ -107,12 +117,21 @@ class StudentController extends Controller
                 'data' => new StudentResource($student)
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Failed to update student', ['error' => $e->getMessage()]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed while updating student', ['errors' => $e->errors()]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update student'
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update student', ['error' => $e->getMessage(), 'student_id' => $student->id]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update student: ' . $e->getMessage()
             ], 500);
         }
     }

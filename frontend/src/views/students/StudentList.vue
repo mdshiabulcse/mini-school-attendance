@@ -1,4 +1,3 @@
-<!-- src/views/students/StudentList.vue -->
 <template>
   <v-container fluid class="page-container">
     <!-- Header Section -->

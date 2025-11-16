@@ -9,15 +9,11 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppBar: typeof import('./src/components/Layout/AppBar.vue')['default']
-    AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     AttendanceChart: typeof import('./src/components/Charts/AttendanceChart.vue')['default']
-    BookingForm: typeof import('./src/components/BookingForm.vue')['default']
     ConfirmDialog: typeof import('./src/components/Dialogs/ConfirmDialog.vue')['default']
-    DefaultLayout: typeof import('@/ layouts/DefaultLayout.vue')['default']
     Footer: typeof import('./src/components/Layout/Footer.vue')['default']
-    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     LoadingSpinner: typeof import('./src/components/Common/LoadingSpinner.vue')['default']
-    NavigationDrawer: typeof import('./src/components/NavigationDrawer.vue')['default']
+    NotificationContainer: typeof import('./src/components/Common/NotificationContainer.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchFilter: typeof import('./src/components/Common/SearchFilter.vue')['default']

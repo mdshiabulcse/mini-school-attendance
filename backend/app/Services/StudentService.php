@@ -1,10 +1,9 @@
 <?php
-// app/Services/StudentService.php
-
 namespace App\Services;
 
 use App\Models\Student;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -48,17 +47,38 @@ class StudentService
 
     public function updateStudent(Student $student, array $data, $photoFile = null): Student
     {
-        if ($photoFile) {
-            // Delete old photo if exists
-            if ($student->photo) {
-                Storage::disk('public')->delete($student->photo);
+        try {
+            // Handle photo upload
+            if ($photoFile) {
+                // Delete old photo if exists
+                if ($student->photo) {
+                    Storage::disk('public')->delete($student->photo);
+                }
+                $data['photo'] = $this->storePhoto($photoFile);
             }
-            $data['photo'] = $this->storePhoto($photoFile);
-        }
 
-        $student->update($data);
-        return $student->fresh();
+            // Ensure boolean fields are properly cast
+            if (isset($data['is_active'])) {
+                $data['is_active'] = (bool)$data['is_active'];
+            }
+
+            Log::info('Student updated: ' . json_encode($data, JSON_PRETTY_PRINT));
+
+            // Update student with the data
+            $student->update($data);
+
+            return $student->fresh();
+
+        } catch (\Exception $e) {
+            Log::error('StudentService: Failed to update student', [
+                'student_id' => $student->id,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
     }
+
+
 
     public function deleteStudent(Student $student): bool
     {

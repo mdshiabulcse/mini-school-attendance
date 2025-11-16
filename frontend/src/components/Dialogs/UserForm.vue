@@ -14,7 +14,7 @@
           <v-row>
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.name"
+                v-model="formData.name"
                 label="Full Name"
                 :rules="[required]"
                 required
@@ -23,10 +23,10 @@
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.email"
+                v-model="formData.email"
                 label="Email"
                 type="email"
-                :rules="[required, email]"
+                :rules="[required, emailValidator]"
                 required
                 variant="outlined"
               ></v-text-field>
@@ -36,15 +36,15 @@
           <v-row>
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.phone"
+                v-model="formData.phone"
                 label="Phone"
-                :rules="[phone]"
+                :rules="[phoneValidator]"
                 variant="outlined"
               ></v-text-field>
             </v-col>
             <v-col cols="12" sm="6">
               <v-select
-                v-model="form.role"
+                v-model="formData.role"
                 :items="roleOptions"
                 label="Role"
                 :rules="[required]"
@@ -57,10 +57,10 @@
           <v-row>
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.password"
+                v-model="formData.password"
                 label="Password"
                 :type="showPassword ? 'text' : 'password'"
-                :rules="isEdit ? [] : [required, password]"
+                :rules="isEdit ? [] : [required, passwordValidator]"
                 :required="!isEdit"
                 variant="outlined"
                 :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
@@ -69,7 +69,7 @@
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.password_confirmation"
+                v-model="formData.password_confirmation"
                 label="Confirm Password"
                 :type="showPassword ? 'text' : 'password'"
                 :rules="isEdit ? [] : [required, passwordMatch]"
@@ -79,10 +79,10 @@
             </v-col>
           </v-row>
 
-          <v-row>
+          <v-row v-if="isEdit">
             <v-col cols="12">
               <v-switch
-                v-model="form.is_active"
+                v-model="formData.is_active"
                 label="Active User"
                 color="success"
                 hide-details
@@ -105,101 +105,160 @@
   </v-dialog>
 </template>
 
-<script>
-import { ref, watch } from 'vue'
-import { required, email, phone, password } from '@/utils/validators'
+<script setup>
+import { ref, watch, computed } from 'vue'
 
-export default {
-  name: 'UserForm',
-  props: {
-    modelValue: Boolean,
-    user: {
-      type: Object,
-      default: null
+// Props
+const props = defineProps({
+  modelValue: Boolean,
+  user: {
+    type: Object,
+    default: null
+  }
+})
+
+// Emits
+const emit = defineEmits(['update:modelValue', 'submit', 'close'])
+
+// Reactive data
+const dialog = ref(false)
+const form = ref(null)
+const loading = ref(false)
+const isEdit = ref(false)
+const showPassword = ref(false)
+
+// Form data with default values
+const formData = ref({
+  name: '',
+  email: '',
+  phone: '',
+  role: 'teacher',
+  password: '',
+  password_confirmation: '',
+  is_active: true
+})
+
+// Constants
+const roleOptions = [
+  { title: 'Admin', value: 'admin' },
+  { title: 'Teacher', value: 'teacher' },
+  { title: 'Parent', value: 'parent' }
+]
+
+// Validators
+const required = (value) => !!value || 'This field is required.'
+
+const emailValidator = (value) => {
+  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return pattern.test(value) || 'Please enter a valid email address.'
+}
+
+const phoneValidator = (value) => {
+  if (!value) return true
+  const pattern = /^[+]?[\d\s\-()]{10,}$/
+  return pattern.test(value) || 'Please enter a valid phone number.'
+}
+
+const passwordValidator = (value) => {
+  return value.length >= 8 || 'Password must be at least 8 characters long'
+}
+
+const passwordMatch = (value) => {
+  return value === formData.value.password || 'Passwords do not match'
+}
+
+// Watchers
+watch(() => props.modelValue, (val) => {
+  dialog.value = val
+  if (val) {
+    initializeForm()
+  }
+})
+
+watch(() => props.user, (val) => {
+  if (val && dialog.value) {
+    isEdit.value = true
+    formData.value = { ...val }
+  } else {
+    isEdit.value = false
+  }
+})
+
+// Methods
+const initializeForm = () => {
+  console.log('Initializing user form with:', props.user)
+
+  if (props.user && isEdit.value) {
+    // Edit mode - populate with user data
+    formData.value = {
+      name: props.user.name || '',
+      email: props.user.email || '',
+      phone: props.user.phone || '',
+      role: props.user.role || 'teacher',
+      password: '',
+      password_confirmation: '',
+      is_active: props.user.is_active !== undefined ? props.user.is_active : true
     }
-  },
-  setup(props, { emit }) {
-    const dialog = ref(false)
-    const form = ref({})
-    const loading = ref(false)
-    const isEdit = ref(false)
-    const showPassword = ref(false)
-
-    const roleOptions = [
-      { title: 'Admin', value: 'admin' },
-      { title: 'Teacher', value: 'teacher' },
-      { title: 'Parent', value: 'parent' }
-    ]
-
-    watch(() => props.modelValue, (val) => {
-      dialog.value = val
-      if (val) {
-        initializeForm()
-      }
-    })
-
-    watch(() => props.user, (val) => {
-      if (val) {
-        isEdit.value = true
-        form.value = { ...val }
-      } else {
-        isEdit.value = false
-        initializeForm()
-      }
-    })
-
-    const initializeForm = () => {
-      form.value = props.user ? { ...props.user } : {
-        name: '',
-        email: '',
-        phone: '',
-        role: 'teacher',
-        password: '',
-        password_confirmation: '',
-        is_active: true
-      }
-    }
-
-    const passwordMatch = (value) => {
-      return value === form.value.password || 'Passwords do not match'
-    }
-
-    const closeDialog = () => {
-      dialog.value = false
-      emit('update:modelValue', false)
-      emit('close')
-    }
-
-    const submitForm = () => {
-      // Remove password confirmation before sending to API
-      const submitData = { ...form.value }
-      if (submitData.password_confirmation) {
-        delete submitData.password_confirmation
-      }
-
-      // If editing and password is empty, remove it
-      if (isEdit.value && !submitData.password) {
-        delete submitData.password
-      }
-
-      emit('submit', submitData)
-    }
-
-    return {
-      dialog,
-      form,
-      loading,
-      isEdit,
-      showPassword,
-      roleOptions,
-      required,
-      email,
-      phone,
-      password,
-      passwordMatch,
-      closeDialog,
-      submitForm
+  } else {
+    // Add mode - reset form
+    formData.value = {
+      name: '',
+      email: '',
+      phone: '',
+      role: 'teacher',
+      password: '',
+      password_confirmation: '',
+      is_active: true
     }
   }
 }
+
+const closeDialog = () => {
+  dialog.value = false
+  emit('update:modelValue', false)
+  emit('close')
+}
+
+const submitForm = async () => {
+  // Validate form
+  const { valid } = await form.value.validate()
+
+  if (!valid) {
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // Prepare data for submission
+    const submitData = { ...formData.value }
+
+    // Remove password confirmation before sending to API
+    if (submitData.password_confirmation) {
+      delete submitData.password_confirmation
+    }
+
+    // If editing and password is empty, remove it
+    if (isEdit.value && !submitData.password) {
+      delete submitData.password
+    }
+
+    console.log('Submitting user data:', submitData)
+
+    // Emit the data
+    emit('submit', submitData)
+
+  } catch (error) {
+    console.error('Form submission error:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Initialize form when dialog opens
+watch(dialog, (val) => {
+  if (val) {
+    initializeForm()
+  }
+})
 </script>

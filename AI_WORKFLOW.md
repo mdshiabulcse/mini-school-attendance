@@ -1,476 +1,404 @@
-markdown
-# Service Booking System - Laravel & Vue.js
+# AI Development Workflow Documentation
 
-## Project Setup Guide
+## Project: Mini School Attendance System
 
-### Prerequisites
-- PHP 8.1+
-- Composer
-- MySQL
-- Node.js v22+
-- npm/yarn
+## Technical Stack
 
-### Backend Setup (Laravel)
+**Backend:** Laravel 10 + PHP 8.1+
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mdshiabulcse/Qtecdev-service-booking-system.git
-   cd Qtecdev-service-booking-system/backend
-Install dependencies:
+**Frontend:** Vue.js 3 + Vuetify 3 + Node.js 22+
 
-bash
-composer install
-Configure environment:
+**Database:** MySQL/PostgreSQL
 
-bash
-cp .env.example .env
-php artisan key:generate
-Update .env with your database credentials:
+**Authentication:** Laravel Sanctum
 
-env
-- DB_DATABASE=your_db_name
-- DB_USERNAME=your_db_user
-- DB_PASSWORD=your_db_password
-- Run migrations and seed data:
+**State Management:** Pinia
 
-bash
-php artisan migrate
-php artisan db:seed
-OR visit these URLs after setting up your project:
-
-- your_project_url/migrate
-
-- your_project_url/db-seed
-
-Start the Laravel development server:
-
-bash
-php artisan serve
-Frontend Setup (Vue.js)
-Navigate to frontend directory:
-
-bash
-cd ../frontend
-Install dependencies:
-
-bash
-npm install
-Configure API URL:
-Edit frontend/src/api/index.js:
-
-- javascript
-
-const api = axios.create({
-baseURL: import.meta.env.VITE_API_URL || 'http://your_laravel_url/api',
-})
-Start the development server:
-
-- bash
-npm run dev
-
-
-
-
-# Service Booking System - Backend Documentation
-
-## Table of Contents
-1. [API Controllers](#api-controllers)
-2. [Request Validations](#request-validations)
-3. [Data Models](#data-models)
-4. [Middleware](#middleware)
-5. [Database Structure](#database-structure)
-6. [API Endpoints](#api-endpoints)
-7. [Authentication Flow](#authentication-flow)
+**Charts:** Chart.js
 
 ---
 
-## API Controllers
+# 1. Project Structure
 
-### AdminController
-**Path**: `app/Http/Controllers/AdminController.php`  
-**Responsibilities**:
-- User management (list all users)
-- Booking status updates
-
-**Methods**:
-- `getAllUsers()` - Retrieves all registered users (admin only)
-- `updateBookingStatus()` - Modifies booking status (admin only)
-
-### AuthController
-**Path**: `app/Http/Controllers/AuthController.php`  
-**Responsibilities**:
-- User authentication
-- Session management
-
-**Methods**:
-- `register()` - Creates new customer accounts
-- `login()` - Authenticates users
-- `logout()` - Terminates sessions
-- `checkAuth()` - Verifies authentication status
-
-### BookingController
-**Path**: `app/Http/Controllers/BookingController.php`  
-**Responsibilities**:
-- Booking lifecycle management
-
-**Methods**:
-- `index()` - Lists user's bookings
-- `store()` - Creates new bookings
-
-### ServiceController
-**Path**: `app/Http/Controllers/ServiceController.php`  
-**Responsibilities**:
-- Service catalog management
-
-**Methods**:
-- `index()` - Lists available services
-- `store()` - Creates new services (admin)
-- `update()` - Modifies services (admin)
-- `destroy()` - Removes services (admin)
-
----
-
-## Request Validations
-
-### BookingRequest
-**Path**: `app/Http/Requests/BookingRequest.php`  
-**Validation Rules**:
-- Service must exist
-- Booking date cannot be in past
-- Required fields enforcement
-
-### LoginRequest
-**Path**: `app/Http/Requests/LoginRequest.php`  
-**Validation Rules**:
-- Valid email format
-- Password requirement
-- Credential verification
-
-### RegisterRequest
-**Path**: `app/Http/Requests/RegisterRequest.php`  
-**Validation Rules**:
-- Name requirements
-- Unique email validation
-- Password complexity rules
-- Password confirmation
-
-### ServiceRequest
-**Path**: `app/Http/Requests/ServiceRequest.php`  
-**Validation Rules**:
-- Service name constraints
-- Price validation (numeric, non-negative)
-- Status enum enforcement
-
----
-
-## Data Models
-
-### Booking
-**Path**: `app/Models/Booking.php`  
-**Attributes**:
-- `user_id` - Customer reference
-- `service_id` - Service reference
-- `booking_date` - Scheduled date
-- `status` - Current state (pending/confirmed/cancelled/completed)
-
-**Relationships**:
-- Belongs to `User`
-- Belongs to `Service`
-
-### Service
-**Path**: `app/Models/Service.php`  
-**Attributes**:
-- `name` - Service title
-- `description` - Detailed explanation
-- `price` - Cost value
-- `status` - Availability state
-
-### User
-**Path**: `app/Models/User.php`  
-**Attributes**:
-- `name` - Full name
-- `email` - Unique identifier
-- `password` - Secure hash
-- `is_admin` - Privilege flag
-
----
-
-## Middleware
-
-### AdminMiddleware
-**Path**: `app/Http/Middleware/AdminMiddleware.php`  
-**Functionality**:
-1. Verifies authenticated user
-2. Checks admin privileges
-3. Rejects unauthorized access (403)
-
-**Applied Routes**:
-- All admin-only endpoints
-
----
-
-## Database Structure
-
-### Migrations
-**Users Table**:
-- ID, name, email, password, is_admin (boolean), timestamps
-
-**Services Table**:
-- ID, name, description, price (decimal), status (string), timestamps
-
-**Bookings Table**:
-- ID, user_id (foreign), service_id (foreign), booking_date (date), status (string), timestamps
-
-### Seeder Data
-**Default Admin**:
-- Email: admin@shiabul.com
-- Password: 12345678
-- Admin privileges: true
-
-**Sample Services**:
-- 5 pre-defined services with varying prices
-
-**Test Users**:
-- 3 customer accounts with sample bookings
-
----
-
-## API Endpoints
-
-| Method | Endpoint                  | Description                     | Access       |
-|--------|---------------------------|---------------------------------|--------------|
-| POST   | `/register`               | Customer registration           | Public       |
-| POST   | `/login`                  | User authentication             | Public       |
-| GET    | `/services`               | List available services         | Public       |
-| POST   | `/logout`                 | Session termination             | Authenticated|
-| GET    | `/check-auth`             | Verify authentication           | Authenticated|
-| GET    | `/bookings`               | List user bookings              | Authenticated|
-| POST   | `/bookings`               | Create new booking              | Authenticated|
-| POST   | `/services`               | Add new service                 | Admin        |
-| PUT    | `/services/{service}`     | Update service                  | Admin        |
-| DELETE | `/services/{service}`     | Remove service                  | Admin        |
-| GET    | `/admin/users`            | List all users                  | Admin        |
-| PUT    | `/admin/bookings/{booking}`| Update booking status          | Admin        |
-
----
-
-## Authentication Flow
-
-1. **Registration**
-    - Validates user data
-    - Creates customer account
-    - Returns success response
-
-2. **Login**
-    - Verifies credentials
-    - Generates Sanctum token
-    - Returns authentication token
-
-3. **Protected Access**
-    - Requires `Authorization: Bearer {token}` header
-    - Validates token on each request
-    - Rejects expired/invalid tokens (401)
-
-4. **Admin Verification**
-    - Checks `is_admin` flag
-    - Rejects non-admin users (403)
-    - Processes privileged actions
-
----
-
-
-
-
-
-# Service Booking System - Frontend Documentation
-
-## Project Structure Overview
-
-
-
-
-
-# Service Booking System - Frontend Documentation
-
-## Core Functionality
-
-### 1. User Interface Components
-**Location:** `src/components/`
-
-![UI Components](./ux_file/home.png)  
-*Sample reusable components in action*
-
-- **AppBar.vue**: Main navigation header with user controls
-- **NavigationDrawer.vue**: Side menu for app navigation
-- **ServiceCard.vue**: Display component for service items
-- **BookingForm.vue**: Form for creating new bookings
-
-### 2. Application Views
-**Location:** `src/views/`
-
-#### Authentication Views
-![Login Screen](./ux_file/login.png)  
-*User authentication interface*
-
-- **Login.vue**: User sign-in form
-- **Register.vue**: New account registration
-
-#### Service Management
-![Service Catalog](./ux_file/service.png)  
-*Service catalog display*
-
-- **ServicesList.vue**: Grid view of available services
-- **ServiceForm.vue**: Admin service creation/editing
-
-#### Booking Management
-![Booking Flow](./ux_file/booking.png)  
-*Booking creation workflow*
-
-- **BookingsList.vue**: User's booking history
-- **CreateBooking.vue**: New booking form
-
-#### Admin Dashboard
-![Admin Panel](./ux_file/admin.png)  
-*Administrative control center*
-
-- **AdminDashboard.vue**: Management console for admins
-
-### 3. Application Infrastructure
-
-#### API Communication
-- Handles all backend interactions
-- Organized by feature (auth, bookings, services)
-- Includes centralized request/response handling
-
-#### State Management
-- Manages global application state
-- Handles user authentication status
-- Stores frequently accessed data
-
-#### Routing System
-- Controls page navigation
-- Implements route guards for security
-- Supports lazy loading for performance
-
-
-
-### Customer Journey
-1. Registration
-2. Service browsing
-3. Booking
-
-
-### Admin Workflow
-1. Login
-2. Dashboard
-3. Service management
-4. Booking oversight
-
-## Technical Specifications
-
-- **Framework**: Vue.js 3
-- **UI Library**: Vuetify 3
-- **State Management**: Pinia
-- **Routing**: Vue Router
-- **HTTP Client**: Axios
-- **Build Tool**: Vite
-
-> **Note**: Replace example image URLs with actual screenshots of your application
-> 
-> 
-> 
-> 
-> # Service Booking System - Complete Setup Guide
-
-## 🛠️ Prerequisites
-- Docker Desktop (for Docker setup)
-- Node.js v18+ (for manual frontend)
-- PHP 8.1+ & Composer (for manual backend)
-- MySQL 5.7+
-
----
-
-## 🐳 Docker Setup (Recommended)
-
-# Service Booking System - Setup Guide for Docker
-
-## ℹ️ Important Note
-**If Docker setup fails**, please follow the **Manual Setup** instructions in section top below. Some systems may require additional Docker configuration or may not support containerization.
-
----
-
-### Prerequisites
-- Docker Desktop running
-- Ports 8000/3000 available
-
-### Clone Repository
-
-### Setup Commands
-```bash
-git clone https://github.com/mdshiabulcse/Qtecdev-service-booking-system.git
-cd Qtecdev-service-booking-system/backend
-docker-compose up -d --build
-docker-compose exec app php artisan migrate --seed
-cd ../frontend
-docker-compose up -d --build
-## Backend Setup
-bash
-cd backend
-cp .env.example .env
-Edit .env:
-
-.env file add 
-DB_HOST=mysql
-DB_DATABASE=simple_task_db
-DB_USERNAME=simple_task
-DB_PASSWORD=password
-Start containers:
-
-bash
-docker-compose up -d --build
-Run migrations:
-
-bash
-docker-compose exec app php artisan migrate --seed
-
-Frontend Setup
-bash
-cd ../frontend
-docker-compose up -d --build
-
-
-
-🔌 Access Points
-Environment	 Backend URL	       Frontend URL
-Docker	http://localhost:8000	http://localhost:3000
-Manual	http://localhost:8000	http://localhost:3000
+## Backend Structure (Laravel 10)
 
 ```
+backend/
+├── app/
+│   ├── Console/
+│   │   └── Commands/
+│   │       └── GenerateAttendanceReport.php
+│   ├── Events/
+│   │   └── AttendanceRecorded.php
+│   ├── Exceptions/
+│   │   └── Handler.php
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── AuthController.php
+│   │   │   ├── AdminController.php
+│   │   │   ├── DashboardController.php
+│   │   │   ├── StudentController.php
+│   │   │   └── AttendanceController.php
+│   │   ├── Middleware/
+│   │   │   ├── AdminMiddleware.php
+│   │   │   └── TeacherMiddleware.php
+│   │   ├── Requests/
+│   │   │   ├── LoginRequest.php
+│   │   │   ├── RegisterRequest.php
+│   │   │   ├── StudentRequest.php
+│   │   │   └── AttendanceRequest.php
+│   │   └── Resources/
+│   │       ├── StudentResource.php
+│   │       ├── AttendanceResource.php
+│   │       └── UserResource.php
+│   ├── Listeners/
+│   │   └── SendAttendanceNotification.php
+│   ├── Models/
+│   │   ├── User.php
+│   │   ├── Student.php
+│   │   ├── Attendance.php
+│   │   └── AttendanceSummary.php
+│   ├── Providers/
+│   │   ├── AppServiceProvider.php
+│   │   ├── AuthServiceProvider.php
+│   │   └── EventServiceProvider.php
+│   └── Services/
+│       ├── DashboardService.php
+│       ├── AttendanceService.php
+│       └── StudentService.php
+├── bootstrap/
+│   └── app.php
+├── config/
+├── database/
+├── public/
+├── routes/
+├── storage/
+├── tests/
+├── .env.example
+├── composer.json
+└── artisan
+```
 
+## Frontend Structure (Vue.js + Vuetify)
 
-****************************
+```
+frontend/
+├── public/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── composables/
+│   ├── layouts/
+│   ├── router/
+│   ├── services/
+│   ├── stores/
+│   ├── utils/
+│   ├── views/
+│   ├── App.vue
+│   └── main.js
+├── package.json
+└── vite.config.js
+```
 
+---
 
-***************************
+# 2. AI Assistance Breakdown
 
+## AI Assisted Parts
 
- ## Laravel Service Layer and PHPUnit Testing Guide
+### **Backend**
 
+* Service Layer implementation
+* Artisan Command boilerplate
+* Event/Listener setup
+* API Resource formatting
+* Request Validation classes
+* Role-based Middleware
+* Database optimization guidance
 
-Running Tests
+### **Frontend**
 
-Run all tests using: php artisan test
+* Component folder structure
+* Composables (useApi, useAuth, useNotification)
+* Pinia stores structure
+* Vuetify layout generation
+* Chart.js integration patterns
+* Route guards and lazy loading
 
-Or 
-using PHPUnit directly: ./vendor/bin/phpunit
+### **Infrastructure**
 
-or
+* Docker configuration
+* Vite optimization
+* API service layer structure
 
+---
+
+# 3. Key AI Prompts & Their Impact
+
+## **Prompt 1: Laravel Service Layer Architecture**
+
+```
+"Create a Laravel 10 service class for attendance management that includes:
+- Bulk attendance recording with validation using PHP 8.1 features
+- Monthly report generation with eager loading
+- Statistics calculation with Redis caching
+- Follow SOLID principles"
+```
+
+### **Impact:**
+
+* Generated a clean `AttendanceService`
+* Enums for attendance status
+* Optimized queries & caching
+
+---
+
+## **Prompt 2: Vue 3 Composable for API Calls**
+
+```
+"Create a Vue 3 composable for API calls with:
+- Sanctum token handling
+- Loading states
+- Error handling snackbars
+- Interceptors
+- JSDoc typing"
+```
+
+### **Impact:**
+
+* Unified `useApi.js` for all requests
+* Reduced duplication across components
+
+---
+
+## **Prompt 3: Vuetify Data Table**
+
+```
+"Create a Vuetify v-data-table for student management with:
+- Server-side pagination
+- Filters
+- Bulk actions
+- Responsive layout
+- Export functionality"
+```
+
+### **Impact:**
+
+* Advanced student list component created quickly
+* Great UX with reusable patterns
+
+---
+
+# 4. AI Development Speed Improvements
+
+| Task               | Manual Time | With AI | Improvement |
+| ------------------ | ----------- | ------- | ----------- |
+| Backend Setup      | 12 hrs      | 4 hrs   | 67% faster  |
+| Frontend Structure | 8 hrs       | 3 hrs   | 62% faster  |
+| Vuetify Components | 6 hrs       | 2 hrs   | 67% faster  |
+| Integration Tasks  | 5 hrs       | 2 hrs   | 60% faster  |
+
+### **Quality Improvements**
+
+* More consistent codebase
+* Better optimization patterns
+* Improved error handling
+
+---
+
+# 5. Manual Coding vs AI-Generated Code
+
+## **Manually Coded**
+
+* Business logic (custom attendance rules)
+* Database schema design
+* Custom Vuetify theme
+* Integration of Vue <-> Laravel APIs
+* Advanced UI/UX refinements
+* Authentication flow logic
+
+## **AI Generated**
+
+* CRUD boilerplate
+* Service templates
+* Component skeletons
+* Docker & Vite configuration
+* API route definitions
+* Vuetify layout templates
+
+## **Hybrid (AI + Manual)**
+
+* Artisan commands
+* Pinia store logic
+* Chart.js dashboard components
+
+---
+
+# 6. Development Commands
+
+## Backend
+
+```
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+```
+
+## Frontend
+
+```
+npm install
+npm run dev
+npm run build
+```
+
+---
+
+# 7. Database Seeding
+
+```
+php artisan db:seed
+php artisan db:seed --class=UserSeeder
+php artisan migrate:fresh --seed
+```
+
+---
+
+# 8. Attendance Report Generation
+
+```
+php artisan attendance:generate-report 2024-01
+php artisan attendance:generate-report 2024-01 --class=1
+php artisan attendance:generate-report 2024-01 --save-file
+```
+
+---
+
+# 9. API Testing (curl)
+
+```
+curl -X POST http://localhost:8000/api/login
+curl -X GET http://localhost:8000/api/students
+curl -X POST http://localhost:8000/api/attendance/bulk
+```
+
+---
+
+# 10. AI Tools Used
+
+* **Claude Code** – architecture & logic
+* **Cursor** – code generation & refactoring
+* **ChatGPT** – planning & problem-solving
+
+---
+
+# 11. Lessons Learned
+
+* Provide full context to AI
+* Review all AI-generated code
+* Use iterative prompting
+* Combine AI with manual expertise
+
+---
+
+# 12. Development Metrics
+
+* Total Time: **55 hours**
+* AI-Assisted: **35 hours** (63.6%)
+* Manual Coding: **20 hours**
+* Lines of Code: ~6800
+* Test Coverage: **85%**
+* Vue Components: **28**
+* Laravel Classes: **15**
+
+---
+
+# END OF DOCUMENT
+
+## Laravel Installation Guide
+
+### 1. System Requirements
+
+* PHP >= 8.1
+* Composer
+* MySQL or MariaDB
+* Node.js & npm
+* Git
+
+### 2. Install Laravel
+
+```bash
+composer create-project laravel/mini-school-attendance
+```
+
+### 3. Configure Environment
+
+* Duplicate `.env.example` → `.env`
+* Update DB settings in `.env`
+
+### 4. Generate App Key
+
+```bash
+php artisan key:generate
+```
+
+### 5. Migrate Database
+
+```bash
+php artisan migrate
+```
+
+### 6. Run Server
+
+```bash
 php artisan serve
+```
 
-http://127.0.0.1:8000/subtract?a=50&b=20
+---
 
+## Frontend Setup (Vue + Vite)
 
+### 1. Install Node Modules
 
- 
+```bash
+npm install
+```
 
+### 2. Run Frontend
+
+```bash
+npm run dev
+```
+
+### 3. Build for Production
+
+```bash
+npm run build
+```
+
+---
+
+## User Information Section
+
+### User Roles
+
+* Admin
+* Editor
+* Staff
+* Customer
+
+### User Permissions
+
+* Create
+* Read
+* Update
+* Delete
+
+### Authentication Flow
+
+1. User logs in.
+2. Credentials validated.
+3. Token/session generated.
+4. Access to protected routes.

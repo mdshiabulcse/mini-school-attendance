@@ -1,4 +1,3 @@
-<!-- src/views/students/StudentDetail.vue -->
 <template>
   <v-container fluid class="page-container" v-if="student">
     <!-- Header Section -->
@@ -291,6 +290,7 @@ const student = ref(null)
 const attendanceHistory = ref([])
 const attendanceLoading = ref(false)
 const showEditDialog = ref(false)
+const updateLoading = ref(false)
 
 // Filters
 const attendanceFilters = ref({
@@ -365,7 +365,9 @@ const editStudent = () => {
 }
 
 const handleStudentUpdate = async (studentData) => {
+  updateLoading.value = true
   try {
+    // studentData is FormData object from StudentForm component
     const response = await studentService.updateStudent(student.value.id, studentData)
 
     if (response.data.success) {
@@ -377,7 +379,9 @@ const handleStudentUpdate = async (studentData) => {
     }
   } catch (error) {
     console.error('Failed to update student:', error)
-    showError('Failed to update student')
+    showError(error.message || 'Failed to update student')
+  } finally {
+    updateLoading.value = false
   }
 }
 
