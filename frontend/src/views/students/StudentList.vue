@@ -507,7 +507,6 @@ const confirmToggleStatus = async () => {
       throw new Error(response.data.message)
     }
   } catch (error) {
-    console.error('Failed to update student status:', error)
     showError('Failed to update student status')
   } finally {
     actionLoading.value = false

@@ -80,13 +80,8 @@ class StudentController extends Controller
     public function update(Request $request, Student $student): JsonResponse
     {
 
-        Log::info('Student updated: ' . json_encode($request, JSON_PRETTY_PRINT));
-
         try {
-            // Handle FormData - convert string booleans to actual booleans
             $requestData = $request->all();
-
-            // Convert 'true'/'false' strings to boolean for is_active
             if (isset($requestData['is_active'])) {
                 $requestData['is_active'] = filter_var($requestData['is_active'], FILTER_VALIDATE_BOOLEAN);
             }
@@ -104,13 +99,13 @@ class StudentController extends Controller
                 'parent_phone' => 'sometimes|required|string|max:20',
                 'address' => 'sometimes|nullable|string',
                 'photo' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'is_active' => 'sometimes|boolean'
+                'is_active' => 'sometimes|in:true,false,1,0'
             ]);
+            if (isset($validated['is_active']) && is_string($validated['is_active'])) {
+                $validated['is_active'] = $validated['is_active'] === 'true' || $validated['is_active'] === '1';
+            }
 
             $student = $this->studentService->updateStudent($student, $validated, $request->file('photo'));
-
-            Log::info('Student updated', ['student_id' => $student->id, 'name' => $student->name]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Student updated successfully',
@@ -118,8 +113,6 @@ class StudentController extends Controller
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation failed while updating student', ['errors' => $e->errors()]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
