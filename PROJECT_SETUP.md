@@ -258,6 +258,21 @@ exit
 
 * Accessible at [http://localhost:3000](http://localhost:3000)
 
+# Project Setup Documentation
+
+## 5.3 Vue Frontend
+
+- Accessible at: **http://localhost:3000**
+
+### Frontend `.env` Setup
+
+Create a `.env` file inside the **frontend** directory and add the following:
+
+```env
+VITE_API_URL=http://localhost:8000/api
+```
+
+
 ### 5.4 Backend API
 
 * Accessible at [http://localhost:8000](http://localhost:8000)
