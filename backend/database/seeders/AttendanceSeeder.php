@@ -1,6 +1,4 @@
 <?php
-// database/seeders/AttendanceSeeder.php
-
 namespace Database\Seeders;
 
 use App\Models\Attendance;
@@ -14,7 +12,18 @@ class AttendanceSeeder extends Seeder
     public function run(): void
     {
         $teacher = User::where('role', 'teacher')->first();
+
+        if (!$teacher) {
+            $this->command->error('No teacher user found. Please run UserSeeder first.');
+            return;
+        }
+
         $students = Student::all();
+
+        if ($students->isEmpty()) {
+            $this->command->error('No students found. Please run StudentSeeder first.');
+            return;
+        }
 
         $startDate = Carbon::now()->subDays(30); // Last 30 days
         $endDate = Carbon::now();
@@ -29,15 +38,24 @@ class AttendanceSeeder extends Seeder
                 if (!$currentDate->isWeekend()) {
                     $status = $this->getRandomAttendanceStatus();
 
-                    Attendance::create([
-                        'student_id' => $student->id,
-                        'date' => $currentDate->format('Y-m-d'),
-                        'status' => $status,
-                        'note' => $this->getAttendanceNote($status),
-                        'recorded_by' => $teacher->id,
-                    ]);
+                    // Check if attendance already exists for this student and date
+                    $existingAttendance = Attendance::where('student_id', $student->id)
+                        ->whereDate('date', $currentDate->format('Y-m-d'))
+                        ->first();
 
-                    $attendanceCount++;
+                    if (!$existingAttendance) {
+                        Attendance::create([
+                            'student_id' => $student->id,
+                            'date' => $currentDate->format('Y-m-d'),
+                            'status' => $status,
+                            'note' => $this->getAttendanceNote($status),
+                            'recorded_by' => $teacher->id,
+                            'created_at' => $currentDate,
+                            'updated_at' => $currentDate,
+                        ]);
+
+                        $attendanceCount++;
+                    }
                 }
 
                 $currentDate->addDay();

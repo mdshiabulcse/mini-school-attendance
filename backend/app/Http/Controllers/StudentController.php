@@ -98,7 +98,6 @@ class StudentController extends Controller
                 'parent_email' => 'sometimes|nullable|email',
                 'parent_phone' => 'sometimes|required|string|max:20',
                 'address' => 'sometimes|nullable|string',
-                'photo' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'is_active' => 'sometimes|in:true,false,1,0'
             ]);
             if (isset($validated['is_active']) && is_string($validated['is_active'])) {

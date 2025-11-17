@@ -1,4 +1,4 @@
-<!-- src/views/attendance/AttendanceRecording.vue -->
+
 <template>
   <v-container fluid class="page-container">
     <!-- Header Section -->
@@ -59,17 +59,54 @@
               type="date"
               variant="outlined"
               :max="today"
+              @update:model-value="onDateChange"
             ></v-text-field>
           </v-col>
         </v-row>
       </v-card-text>
     </v-card>
 
+    <!-- Quick Stats -->
+    <v-row v-if="students.length > 0" class="mb-6">
+      <v-col cols="12" sm="6" md="3">
+        <v-card class="stat-card elevation-3 rounded-lg stat-card--blue">
+          <v-card-text class="pa-4 text-center">
+            <div class="text-h4 font-weight-bold mb-1">{{ attendanceSummary.total || 0 }}</div>
+            <div class="text-subtitle-2 font-weight-medium">Total Students</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="3">
+        <v-card class="stat-card elevation-3 rounded-lg stat-card--green">
+          <v-card-text class="pa-4 text-center">
+            <div class="text-h4 font-weight-bold mb-1">{{ attendanceSummary.present || 0 }}</div>
+            <div class="text-subtitle-2 font-weight-medium">Present</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="3">
+        <v-card class="stat-card elevation-3 rounded-lg stat-card--orange">
+          <v-card-text class="pa-4 text-center">
+            <div class="text-h4 font-weight-bold mb-1">{{ attendanceSummary.absent || 0 }}</div>
+            <div class="text-subtitle-2 font-weight-medium">Absent</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="3">
+        <v-card class="stat-card elevation-3 rounded-lg stat-card--primary">
+          <v-card-text class="pa-4 text-center">
+            <div class="text-h4 font-weight-bold mb-1">{{ attendanceSummary.attendanceRate || 0 }}%</div>
+            <div class="text-subtitle-2 font-weight-medium">Attendance Rate</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Attendance Form -->
-    <v-card v-if="students.length > 0" class="elevation-3 rounded-lg">
+    <v-card v-if="students.length > 0 && attendanceInitialized" class="elevation-3 rounded-lg">
       <v-card-title class="card-title d-flex justify-space-between align-center">
         <div>
-          <span class="text-h6 font-weight-bold">Student Attendance</span>
+          <span class="text-h6 font-weight-bold">Student Attendance - {{ selectedClass }}-{{ selectedSection }}</span>
           <v-chip small color="primary" class="ml-2" text-color="white">
             {{ students.length }} Students
           </v-chip>
@@ -105,23 +142,24 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="student in students" :key="student.id" class="attendance-row">
+          <tr v-for="student in sortedStudents" :key="student.id" class="attendance-row">
             <td class="roll-number">
               <v-chip size="small" variant="flat" color="primary">
-                {{ student.roll_number }}
+                {{ student.roll_number || 'N/A' }}
               </v-chip>
             </td>
             <td class="student-info">
               <div class="d-flex align-center">
-                <v-avatar size="36" color="primary" class="mr-3">
-                    <span class="white--text text-caption">
-                      {{ getUserInitials(student.name) }}
-                    </span>
+                <v-avatar size="36" :color="student.photo ? 'transparent' : 'primary'" class="mr-3">
+                  <v-img v-if="student.photo" :src="getPhotoUrl(student.photo)" alt="Student Photo"></v-img>
+                  <span v-else class="white--text text-caption">
+                    {{ getUserInitials(student.name) }}
+                  </span>
                 </v-avatar>
                 <div>
                   <div class="font-weight-medium">{{ student.name }}</div>
                   <div class="text-caption text-medium-emphasis">
-                    Class {{ student.class }}-{{ student.section }}
+                    {{ student.student_id }}
                   </div>
                 </div>
               </div>
@@ -178,7 +216,6 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                @focus="expandRemarks(student.id)"
               ></v-text-field>
             </td>
           </tr>
@@ -187,11 +224,38 @@
       </v-card-text>
     </v-card>
 
+    <!-- Loading State -->
+    <v-card v-else-if="loadingStudents" class="elevation-3 rounded-lg">
+      <v-card-text class="text-center py-12">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="64"
+          class="mb-4"
+        ></v-progress-circular>
+        <div class="text-h6 text-grey mb-2">Loading Students</div>
+        <div class="text-body-1 text-medium-emphasis">
+          Please wait while we load the student data...
+        </div>
+      </v-card-text>
+    </v-card>
+
     <!-- Empty State -->
-    <v-card v-else class="elevation-3 rounded-lg">
+    <v-card v-else-if="selectedClass && selectedSection" class="elevation-3 rounded-lg">
       <v-card-text class="text-center py-12">
         <v-icon size="64" class="mb-4 text-grey-lighten-2">mdi-account-multiple</v-icon>
         <div class="text-h6 text-grey mb-2">No students found</div>
+        <div class="text-body-1 text-medium-emphasis mb-4">
+          No active students found in {{ selectedClass }}-{{ selectedSection }}
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <!-- Initial State -->
+    <v-card v-else class="elevation-3 rounded-lg">
+      <v-card-text class="text-center py-12">
+        <v-icon size="64" class="mb-4 text-grey-lighten-2">mdi-calendar-check</v-icon>
+        <div class="text-h6 text-grey mb-2">Ready to Record Attendance</div>
         <div class="text-body-1 text-medium-emphasis mb-4">
           Please select a class and section to load students
         </div>
@@ -201,35 +265,49 @@
     <!-- Summary Dialog -->
     <v-dialog v-model="showSummaryDialog" max-width="500px">
       <v-card>
-        <v-card-title class="text-h6">Attendance Summary</v-card-title>
+        <v-card-title class="text-h6">Attendance Recorded Successfully</v-card-title>
         <v-card-text>
           <v-list>
             <v-list-item>
+              <v-list-item-title>Class</v-list-item-title>
+              <v-list-item-subtitle>{{ selectedClass }}-{{ selectedSection }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>Date</v-list-item-title>
+              <v-list-item-subtitle>{{ formatDate(attendanceDate) }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item>
               <v-list-item-title>Total Students</v-list-item-title>
-              <v-list-item-subtitle>{{ students.length }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ attendanceSummary.total }}</v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Present</v-list-item-title>
               <v-list-item-subtitle class="text-success">
-                {{ getStatusCount('present') }}
+                {{ attendanceSummary.present }}
               </v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Absent</v-list-item-title>
               <v-list-item-subtitle class="text-error">
-                {{ getStatusCount('absent') }}
+                {{ attendanceSummary.absent }}
               </v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Late</v-list-item-title>
               <v-list-item-subtitle class="text-warning">
-                {{ getStatusCount('late') }}
+                {{ attendanceSummary.late }}
               </v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Half Day</v-list-item-title>
               <v-list-item-subtitle class="text-orange">
-                {{ getStatusCount('half_day') }}
+                {{ attendanceSummary.halfDay }}
+              </v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>Attendance Rate</v-list-item-title>
+              <v-list-item-subtitle class="text-primary font-weight-bold">
+                {{ attendanceSummary.attendanceRate }}%
               </v-list-item-subtitle>
             </v-list-item>
           </v-list>
@@ -244,7 +322,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useNotification } from '@/composables/useNotification'
 import { attendanceService } from '@/services/attendanceService'
 import { studentService } from '@/services/studentService'
@@ -262,6 +340,7 @@ const loadingClasses = ref(false)
 const loadingStudents = ref(false)
 const submitting = ref(false)
 const showSummaryDialog = ref(false)
+const attendanceInitialized = ref(false)
 
 // Constants
 const today = ref(new Date().toISOString().split('T')[0])
@@ -272,12 +351,25 @@ const classOptions = [
 const sectionOptions = ['A', 'B', 'C', 'D']
 
 // Computed
+const sortedStudents = computed(() => {
+  return [...students.value].sort((a, b) => {
+    // Sort by roll number, handle non-numeric roll numbers
+    const rollA = parseInt(a.roll_number) || 0
+    const rollB = parseInt(b.roll_number) || 0
+    return rollA - rollB
+  })
+})
+
 const attendanceSummary = computed(() => {
   const present = getStatusCount('present')
   const absent = getStatusCount('absent')
   const late = getStatusCount('late')
   const halfDay = getStatusCount('half_day')
   const total = students.value.length
+
+  // Calculate attendance rate (Present + 0.5*HalfDay) / Total
+  const effectivePresent = present + (halfDay * 0.5)
+  const attendanceRate = total > 0 ? Math.round((effectivePresent / total) * 100) : 0
 
   return {
     present,
@@ -286,7 +378,8 @@ const attendanceSummary = computed(() => {
     halfDay,
     total,
     marked: present + absent + late + halfDay,
-    pending: total - (present + absent + late + halfDay)
+    pending: total - (present + absent + late + halfDay),
+    attendanceRate
   }
 })
 
@@ -295,85 +388,147 @@ const onClassChange = () => {
   selectedSection.value = ''
   students.value = []
   attendance.value = {}
+  attendanceInitialized.value = false
+}
+
+const onDateChange = () => {
+  if (selectedClass.value && selectedSection.value) {
+    loadStudents()
+  }
 }
 
 const loadStudents = async () => {
   if (!selectedClass.value || !selectedSection.value) return
 
   loadingStudents.value = true
+  students.value = [] // Clear previous students
+  attendance.value = {} // Clear previous attendance
+  attendanceInitialized.value = false
+
   try {
+    console.log('🔄 Loading students for:', selectedClass.value, selectedSection.value)
+
     const response = await studentService.getStudentsByClassSection(
       selectedClass.value,
       selectedSection.value
     )
 
-    if (response.data.success) {
+    console.log('👥 Students API Response:', response)
+
+    // Handle API response structure
+    if (response.data && Array.isArray(response.data)) {
+      students.value = response.data
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
       students.value = response.data.data
-      initializeAttendanceData()
+    } else if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      students.value = response.data.data
     } else {
-      throw new Error(response.data.message)
+      students.value = []
     }
+
+    console.log(`✅ Loaded ${students.value.length} students`)
+
+    // Wait for next tick to ensure DOM is ready
+    await nextTick()
+    await initializeAttendanceData()
+
   } catch (error) {
-    console.error('Failed to load students:', error)
-    showError('Failed to load students')
+    console.error('❌ Failed to load students:', error)
+    showError('Failed to load students: ' + error.message)
+    students.value = []
   } finally {
     loadingStudents.value = false
   }
 }
 
 const initializeAttendanceData = async () => {
-  // Check if attendance already exists for today
   try {
+    console.log('📊 Initializing attendance data for date:', attendanceDate.value)
+
     const response = await attendanceService.getClassAttendance(
       selectedClass.value,
       selectedSection.value,
       { date: attendanceDate.value }
     )
 
-    if (response.data.success && response.data.data.length > 0) {
-      // Load existing attendance
-      response.data.data.forEach(student => {
+    console.log('📊 Attendance API Response:', response)
+
+    let existingAttendance = []
+
+    // Handle different API response structures for attendance
+    if (response.data && Array.isArray(response.data)) {
+      existingAttendance = response.data
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      existingAttendance = response.data.data
+    } else if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      existingAttendance = response.data.data
+    }
+
+    // Create a fresh attendance object to avoid reactivity issues
+    const newAttendance = {}
+
+    if (existingAttendance && existingAttendance.length > 0) {
+      // Load existing attendance from API response
+      existingAttendance.forEach(student => {
         if (student.attendances && student.attendances.length > 0) {
           const attendanceRecord = student.attendances[0]
-          attendance.value[student.id] = {
+          newAttendance[student.id] = {
             student_id: student.id,
             status: attendanceRecord.status,
             note: attendanceRecord.note || ''
           }
         } else {
-          attendance.value[student.id] = {
+          // No attendance record exists, set default
+          newAttendance[student.id] = {
             student_id: student.id,
             status: 'present',
             note: ''
           }
         }
       })
+      console.log('✅ Loaded existing attendance records')
     } else {
-      // Initialize with default values
+      // No existing attendance found, initialize all as present
+      console.log('🆕 No existing attendance found, initializing defaults')
       students.value.forEach(student => {
-        attendance.value[student.id] = {
+        newAttendance[student.id] = {
           student_id: student.id,
           status: 'present',
           note: ''
         }
       })
     }
+
+    // Replace the entire attendance object to avoid reactivity issues
+    attendance.value = newAttendance
+    attendanceInitialized.value = true
+
+    console.log('✅ Attendance data initialized successfully')
+
   } catch (error) {
+    console.error('❌ Failed to initialize attendance data:', error)
     // Initialize with default values if API fails
+    const newAttendance = {}
     students.value.forEach(student => {
-      attendance.value[student.id] = {
+      newAttendance[student.id] = {
         student_id: student.id,
         status: 'present',
         note: ''
       }
     })
+    attendance.value = newAttendance
+    attendanceInitialized.value = true
+    console.log('🔄 Initialized default attendance due to error')
   }
 }
 
 const markAllPresent = () => {
-  Object.keys(attendance.value).forEach(studentId => {
-    attendance.value[studentId].status = 'present'
+  const newAttendance = { ...attendance.value }
+  Object.keys(newAttendance).forEach(studentId => {
+    newAttendance[studentId].status = 'present'
   })
+  attendance.value = newAttendance
+  console.log('✅ Marked all students as present')
 }
 
 const submitAttendance = async () => {
@@ -396,17 +551,31 @@ const submitAttendance = async () => {
       attendances: Object.values(attendance.value)
     }
 
+    console.log('📤 Submitting attendance data:', attendanceData)
+
     const response = await attendanceService.recordBulk(attendanceData)
 
-    if (response.data.success) {
+    console.log('✅ Attendance submission response:', response)
+
+    // Handle different success response structures
+    const isSuccess = response.data?.success ||
+      response.data?.status === 'success' ||
+      response.status === 200
+
+    if (isSuccess) {
       showSuccess('Attendance recorded successfully')
       showSummaryDialog.value = true
     } else {
-      throw new Error(response.data.message)
+      throw new Error(response.data?.message || 'Failed to record attendance')
     }
   } catch (error) {
-    console.error('Failed to record attendance:', error)
-    showError('Failed to record attendance')
+    console.error('❌ Failed to record attendance:', error)
+
+    if (error.response && error.response.data) {
+      showError(error.response.data.message || 'Failed to record attendance')
+    } else {
+      showError(error.message || 'Failed to record attendance')
+    }
   } finally {
     submitting.value = false
   }
@@ -416,13 +585,11 @@ const getStatusCount = (status) => {
   return Object.values(attendance.value).filter(item => item.status === status).length
 }
 
-const expandRemarks = (studentId) => {
-  // You can add any special handling for remarks field focus
-}
-
 const refreshClassData = () => {
   if (selectedClass.value && selectedSection.value) {
     loadStudents()
+  } else {
+    showError('Please select class and section first')
   }
 }
 
@@ -436,9 +603,26 @@ const getUserInitials = (name) => {
     .substring(0, 2)
 }
 
+const getPhotoUrl = (photoPath) => {
+  if (!photoPath) return null
+  // If it's already a full URL, return as is
+  if (photoPath.startsWith('http')) return photoPath
+  // Otherwise, construct the full URL
+  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/storage/${photoPath}`
+}
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
 // Lifecycle
 onMounted(() => {
-  // You can load initial data here if needed
+  console.log('🎯 Attendance Recording component mounted')
 })
 </script>
 
@@ -467,6 +651,31 @@ onMounted(() => {
   font-weight: 600;
 }
 
+.stat-card {
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.stat-card--blue::before { background: linear-gradient(90deg, #2196F3, #1976D2); }
+.stat-card--green::before { background: linear-gradient(90deg, #4CAF50, #2E7D32); }
+.stat-card--primary::before { background: linear-gradient(90deg, #2196F3, #0D47A1); }
+.stat-card--orange::before { background: linear-gradient(90deg, #FF9800, #F57C00); }
+
 .card-title {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 20px 24px;
@@ -483,10 +692,6 @@ onMounted(() => {
 
 .attendance-row:hover {
   background-color: rgba(0, 0, 0, 0.02);
-}
-
-.attendance-row:last-child {
-  border-bottom: none;
 }
 
 .roll-number {
@@ -518,25 +723,7 @@ onMounted(() => {
   font-size: 0.75rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1263px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-actions {
-    margin-top: 16px;
-    width: 100%;
-  }
-}
-
 @media (max-width: 959px) {
-  .attendance-table {
-    display: block;
-    overflow-x: auto;
-  }
-
   .status-buttons {
     flex-direction: column;
     gap: 4px;

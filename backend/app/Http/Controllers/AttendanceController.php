@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/AttendanceController.php
-
 namespace App\Http\Controllers;
 
 use App\Services\AttendanceService;

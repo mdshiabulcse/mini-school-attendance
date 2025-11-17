@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/ReportController.php
-
 namespace App\Http\Controllers;
 
 use App\Services\AttendanceSummaryService;
